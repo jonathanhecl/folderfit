@@ -1,5 +1,5 @@
 # 📂 FolderFit 
-Efficient Selection, Perfect Fit
+Efficient Selection, Perfect Fit for Folders and Files
 
 This application efficiently selects folders from a given list that best fit within a user-defined maximum storage capacity. It calculates the size of each source folder and optimizes the selection to maximize the utilization of the available space, minimizing any unused space. This utility is ideal for users who need to identify the optimal set of folders to fit within a specific storage limit.
 
