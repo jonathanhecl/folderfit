@@ -5,7 +5,8 @@ This application efficiently selects folders from a given list that best fit wit
 
 ```
 Author note:
-I created this project because I hate to leave free space on CDs/DVDs. I had originally created it in VB6 20 years ago, now it is multiplatform thanks to Golang.
+I created this project because I hate to leave free space on CDs/DVDs.
+I had originally created it in VB6 20 years ago, now it is multiplatform thanks to Golang.
 ```
 
 ## 📚 How to Use
