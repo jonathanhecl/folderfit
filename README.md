@@ -1,2 +1,2 @@
 # folderfit
-Efficient Copying, Perfect Fit.
+Efficient Selection, Perfect Fit
