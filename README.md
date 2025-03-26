@@ -17,6 +17,13 @@ This application efficiently selects folders from a given list that best fit wit
 
 ```sh
 > folderfit folder50kb file100kb -size=150000
+
+FolderFit v 1.0.1
+file100kb - 97 KB
+folder50kb - 48 KB
+
+Selection size: 146 KB / 146 KB
+Free space: 0 bytes
 ```
 
 ## 🤝 Contributing
