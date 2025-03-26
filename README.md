@@ -16,7 +16,7 @@ This application efficiently selects folders from a given list that best fit wit
 ## Example
 
 ```sh
-> folderfit file50kb.dummy file100kb.dummy -size=150000
+> folderfit folder50kb file100kb -size=150000
 ```
 
 ## 🤝 Contributing
