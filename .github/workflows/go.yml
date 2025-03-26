@@ -1,230 +1,116 @@
-# Main workflow for testing and releasing
-
 name: CI/CD
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger only on tags like v1.0.0
 
 env:
   GOVERSION: "1.23"
   NAME: "FolderFit"
-  FULLNAME: "FolderFit"
-  FULLNAME2: "FolderFit"  # for AppImage file, e.g. with spaces replaced by underscores
-  VERSION: "0.0.0"
-
-on: push
 
 jobs:
-
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOVERSION }}
+      - name: Test
+        run: go test -v ./...
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GOVERSION }}
-
-    - name: Install build dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install gcc libgl1-mesa-dev xorg-dev
-
-    - name: Install dependencies
-      run: go mod download
-
-    - name: Test
-      run: go test -coverprofile=coverage.txt ./...
-
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-
-  package_linux:
-    if: startsWith(github.ref, 'refs/tags/')
+  build_linux:
     needs: test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOVERSION }}
+      - name: Build for Linux
+        run: GOOS=linux GOARCH=amd64 go build -o ${{ env.NAME }}-linux64 .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: ${{ env.NAME }}-linux64
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GOVERSION }}
-
-    - name: Install build dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install gcc libgl1-mesa-dev xorg-dev libfuse2
-
-    - name: Install Fyne tool
-      run: go install fyne.io/fyne/v2/cmd/fyne@latest
-
-    - name: Package Fyne app
-      run: fyne package -os linux --release
-
-    - name: Set version
-      run: |
-        VERSION=${{ github.ref_name }}
-        echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
-
-    - name: Build AppImage
-      run: ./tools/build_appimage.sh
-
-    - uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.NAME }}-linux
-        path: ${{ env.FULLNAME2 }}-${{ env.VERSION }}-x86_64.AppImage
-        if-no-files-found: error
-        overwrite: true
-
-  package_windows:
-    if: startsWith(github.ref, 'refs/tags/')
+  build_windows:
     needs: test
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
     steps:
-    - uses: msys2/setup-msys2@v2
-      with:
-        path-type: inherit
-        update: true
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOVERSION }}
+      - name: Build for Windows
+        run: GOOS=windows GOARCH=amd64 go build -o ${{ env.NAME }}-win64.exe .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: ${{ env.NAME }}-win64.exe
 
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GOVERSION }}
-
-    - name: Install Dependencies
-      run: >
-        pacman -Syu &&
-        pacman --noconfirm -S git zip mingw-w64-x86_64-toolchain
-
-    - name: Install Fyne tool
-      run: go install fyne.io/fyne/v2/cmd/fyne@latest
-
-    - name: Package
-      run: fyne package -os windows --release
-
-    - name: Set version
-      run: |
-        VERSION=${{ github.ref_name }}
-        echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
-
-    - name: ZIP package
-      run: zip ${{ env.NAME }}-${{ env.VERSION }}-windows-x64.zip "${{ env.FULLNAME }}.exe"
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.NAME }}-windows
-        path: ${{ env.NAME }}-${{ env.VERSION }}-windows-x64.zip
-        if-no-files-found: error
-        overwrite: true
-
-  package_darwin_arm:
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: macos-14
+  build_macos_arm64:
     needs: test
+    runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOVERSION }}
+      - name: Build for macOS ARM64
+        run: GOOS=darwin GOARCH=arm64 go build -o ${{ env.NAME }}-macos-arm64 .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64-binaries
+          path: ${{ env.NAME }}-macos-arm64
 
-    - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest-stable
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GOVERSION }}
-
-    - name: Install Fyne tool
-      run: go install fyne.io/fyne/v2/cmd/fyne@latest
-
-    - name: Package app bundles
-      run: fyne package -os darwin --release
-
-    - name: Set version
-      run: |
-        VERSION=${{ github.ref_name }}
-        echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
-
-    - name: ZIP app bundle
-      run: zip --symlinks -r ${{ env.NAME }}-${{ env.VERSION }}-darwin-arm64.zip "${{ env.FULLNAME }}.app/"
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.NAME }}-macos-arm
-        path: ${{ env.NAME }}-${{ env.VERSION }}-darwin-arm64.zip
-        if-no-files-found: error
-        overwrite: true
-
-  package_darwin_intel:
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: macos-13
+  build_macos_amd64:
     needs: test
+    runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest-stable
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GOVERSION }}
-
-    - name: Install Fyne tool
-      run: go install fyne.io/fyne/v2/cmd/fyne@latest
-
-    - name: Package app bundles
-      run: fyne package -os darwin --release
-
-    - name: Set version
-      run: |
-        VERSION=${{ github.ref_name }}
-        echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
-
-    - name: ZIP app bundle
-      run: zip --symlinks -r ${{ env.NAME }}-${{ env.VERSION }}-darwin-intel64.zip "${{ env.FULLNAME }}.app/"
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.NAME }}-macos-intel
-        path: ${{ env.NAME }}-${{ env.VERSION }}-darwin-intel64.zip
-        if-no-files-found: error
-        overwrite: true
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GOVERSION }}
+      - name: Build for macOS AMD64
+        run: GOOS=darwin GOARCH=amd64 go build -o ${{ env.NAME }}-macos-amd64 .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-amd64-binaries
+          path: ${{ env.NAME }}-macos-amd64
 
   release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [package_linux, package_darwin_arm, package_darwin_intel, package_windows]
+    needs: [build_linux, build_windows, build_macos_arm64, build_macos_amd64]
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
     steps:
-    - uses: actions/checkout@v4
-
-    - uses: actions/download-artifact@v4
-      with:
-        merge-multiple: true
-
-    - name: Make version string
-      run: |
-        VERSION=${{ github.ref_name }}
-        echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
-
-    - name: Create release
-      uses: softprops/action-gh-release@v2
-      with:
-        fail_on_unmatched_files: true
-        files: |
-          ${{ env.NAME }}-${{ env.VERSION }}-windows-x64.zip
-          ${{ env.FULLNAME2 }}-${{ env.VERSION }}-x86_64.AppImage
-          ${{ env.NAME }}-${{ env.VERSION }}-darwin-arm64.zip
-          ${{ env.NAME }}-${{ env.VERSION }}-darwin-intel64.zip
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-binaries
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-amd64-binaries
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ env.NAME }}-linux64
+            ${{ env.NAME }}-win64.exe
+            ${{ env.NAME }}-macos-arm64
+            ${{ env.NAME }}-macos-amd64
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
