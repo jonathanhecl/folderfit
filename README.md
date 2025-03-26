@@ -6,7 +6,7 @@ This application efficiently selects folders from a given list that best fit wit
 ## How to Use
 
 ```sh
-folderfit <sources> <totalsize>
+> folderfit <sources> <totalsize>
 ```
 
 - `<sources>`: A list of folders to be selected from.
