@@ -47,7 +47,10 @@ jobs:
         with:
           go-version: ${{ env.GOVERSION }}
       - name: Build for Windows
-        run: GOOS=windows GOARCH=amd64 go build -o ${{ env.NAME }}-win64.exe .
+        run: |
+          set GOOS=windows
+          set GOARCH=amd64
+          go build -o ${{ env.NAME }}-win64.exe .
       - uses: actions/upload-artifact@v4
         with:
           name: windows-binaries
