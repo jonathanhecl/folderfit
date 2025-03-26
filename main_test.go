@@ -142,9 +142,9 @@ func Test_calculateSize(t *testing.T) {
 		{
 			name: "Calculate file size",
 			args: args{
-				source: "LICENSE",
+				source: "testing/file.txt",
 			},
-			want: 1091,
+			want: 16,
 		},
 		{
 			name: "Calculate directory size",
