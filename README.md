@@ -6,7 +6,7 @@ This application efficiently selects folders from a given list that best fit wit
 ```
 Author note:
 I created this project because I hate to leave free space on CDs/DVDs.
-I had originally created it in VB.NET 20 years ago, now it is multiplatform thanks to Golang.
+I had originally created it in VB.NET 10 years ago, now it is multiplatform thanks to Golang.
 ```
 [Original project in Forum](https://www.gs-zone.org/temas/fileset-optimal-design-seleccion-inteligente-de-archivos.89846/)
 
