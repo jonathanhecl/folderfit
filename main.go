@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
-var version = "1.0.3"
+var version = "1.0.3b"
 
 func printUsage() {
 	fmt.Println("Usage: folderfit <sources> -size=<totalsize> [-verbose]")
@@ -20,12 +21,14 @@ func printUsage() {
 
 func main() {
 	fmt.Println("FolderFit v", version)
+	fmt.Println()
 
 	if len(os.Args) < 3 {
 		printUsage()
 		return
 	}
 
+	initialTime := time.Now()
 	var totalSize int = 0
 	var sources []string
 	var verbose bool
@@ -52,7 +55,6 @@ func main() {
 	}
 
 	if verbose {
-		fmt.Println()
 		fmt.Println("Calculating sizes...")
 	}
 	folderSizes := make(map[string]int)
@@ -72,7 +74,7 @@ func main() {
 	if verbose {
 		fmt.Printf("\nTotal target size: %s\n", formatSize(totalSize))
 		fmt.Println()
-		fmt.Println("Calculating selection...")
+		fmt.Println("Calculating selection...\n")
 	}
 
 	selected := selectBestFolders(folderSizes, totalSize)
@@ -90,6 +92,7 @@ func main() {
 	}
 	fmt.Printf("\nSelection size: %s / %s\n", formatSize(calculateTotalSize(selected)), formatSize(totalSize))
 	fmt.Printf("Free space: %s\n", formatSize(totalSize-calculateTotalSize(selected)))
+	fmt.Printf("\nFinished in: %s\n", time.Since(initialTime))
 }
 
 func getAllFilesAndFolders(path string) []string {
