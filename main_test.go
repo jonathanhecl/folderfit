@@ -95,14 +95,14 @@ func Test_selectBestFolders(t *testing.T) {
 			name: "Select best folders",
 			args: args{
 				folderSizes: map[string]int{
-					"file1": 1024,
-					"file2": 2048,
+					"file1": 1024 * 1024,
+					"file2": 2048 * 1024,
 				},
-				totalSize: 3072,
+				totalSize: 3072 * 1024,
 			},
 			want: map[string]int{
-				"file1": 1024,
-				"file2": 2048,
+				"file1": 1024 * 1024,
+				"file2": 2048 * 1024,
 			},
 		},
 		{
@@ -158,6 +158,53 @@ func Test_calculateSize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := calculateSize(tt.args.source); got != tt.want {
 				t.Errorf("calculateSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getSizeInBytes(t *testing.T) {
+	type args struct {
+		sizeStr string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Get size in bytes",
+			args: args{
+				sizeStr: "1024",
+			},
+			want: 1024,
+		},
+		{
+			name: "Get size in bytes",
+			args: args{
+				sizeStr: "1024KB",
+			},
+			want: 1024 * 1024,
+		},
+		{
+			name: "Get size in bytes",
+			args: args{
+				sizeStr: "1024MB",
+			},
+			want: 1024 * 1024 * 1024,
+		},
+		{
+			name: "Get size in bytes",
+			args: args{
+				sizeStr: "1.5GB",
+			},
+			want: 1024 * 1024 * 1024 * 1.5,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSizeInBytes(tt.args.sizeStr); got != tt.want {
+				t.Errorf("getSizeInBytes() = %v, want %v", got, tt.want)
 			}
 		})
 	}
