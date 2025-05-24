@@ -8,10 +8,14 @@ import (
 	"strings"
 )
 
-var version = "1.0.1"
+var version = "1.0.2"
 
 func printUsage() {
-	fmt.Println("\nUsage: folderfit <sources> -size=<totalsize> [-verbose]")
+	fmt.Println("Usage: folderfit <sources> -size=<totalsize> [-verbose]")
+	fmt.Println("- Sources can be a list of files and folders or a single * to include all files and folders in the current directory")
+	fmt.Println("- Size is the total size in bytes")
+	fmt.Println("- Verbose is optional and will print more information")
+	fmt.Println("Example: folderfit * -size=1024")
 }
 
 func main() {
@@ -38,7 +42,11 @@ func main() {
 		} else if arg == "-verbose" {
 			verbose = true
 		} else {
-			sources = append(sources, arg)
+			if arg == "*" {
+				sources = append(sources, getAllFilesAndFolders(".")...)
+			} else {
+				sources = append(sources, arg)
+			}
 		}
 	}
 
@@ -50,7 +58,7 @@ func main() {
 
 	if verbose {
 		fmt.Println()
-		fmt.Println("Analyzing...")
+		fmt.Println("Calculating sizes...")
 	}
 	folderSizes := make(map[string]int)
 	for _, source := range sources {
@@ -58,13 +66,18 @@ func main() {
 	}
 
 	if verbose {
+		totalSizeSource := 0
 		for name, size := range folderSizes {
 			fmt.Printf("%s - %s\n", name, formatSize(size))
+			totalSizeSource += size
 		}
+		fmt.Printf("\nTotal source size: %s (%d files)", formatSize(totalSizeSource), len(folderSizes))
 	}
 
 	if verbose {
-		fmt.Printf("\nTotal target size: %s\n\n", formatSize(totalSize))
+		fmt.Printf("\nTotal target size: %s\n", formatSize(totalSize))
+		fmt.Println()
+		fmt.Println("Calculating selection...")
 	}
 
 	selected := selectBestFolders(folderSizes, totalSize)
@@ -82,6 +95,20 @@ func main() {
 	}
 	fmt.Printf("\nSelection size: %s / %s\n", formatSize(calculateTotalSize(selected)), formatSize(totalSize))
 	fmt.Printf("Free space: %s\n", formatSize(totalSize-calculateTotalSize(selected)))
+}
+
+func getAllFilesAndFolders(path string) []string {
+	var files []string
+
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return files
+	}
+	for _, entry := range entries {
+		files = append(files, filepath.Join(path, entry.Name()))
+	}
+
+	return files
 }
 
 func calculateSize(source string) int {
