@@ -8,14 +8,14 @@ import (
 	"strings"
 )
 
-var version = "1.0.2"
+var version = "1.0.3"
 
 func printUsage() {
 	fmt.Println("Usage: folderfit <sources> -size=<totalsize> [-verbose]")
 	fmt.Println("- Sources can be a list of files and folders or a single * to include all files and folders in the current directory")
-	fmt.Println("- Size is the total size in bytes")
+	fmt.Println("- Size is the total size in bytes (you can use GB, MB, KB for easier input, note that you need to use quotes if you use comma)")
 	fmt.Println("- Verbose is optional and will print more information")
-	fmt.Println("Example: folderfit * -size=1024")
+	fmt.Println("Example: folderfit * -size=\"4.7GB\"")
 }
 
 func main() {
@@ -32,13 +32,8 @@ func main() {
 
 	for _, arg := range os.Args[1:] {
 		if strings.HasPrefix(arg, "-size=") {
-			sizeStr := strings.TrimPrefix(arg, "-size=")
-			var err error
-			totalSize, err = strconv.Atoi(sizeStr)
-			if err != nil {
-				fmt.Println("Invalid size argument")
-				return
-			}
+			sizeStr := strings.ToUpper(strings.TrimPrefix(arg, "-size="))
+			totalSize = getSizeInBytes(sizeStr)
 		} else if arg == "-verbose" {
 			verbose = true
 		} else {
@@ -292,4 +287,29 @@ func formatSize(size int) string {
 	} else {
 		return fmt.Sprintf("%.2f GB", float64(size)/(1024*1024*1024))
 	}
+}
+
+func getSizeInBytes(sizeStr string) int {
+	sizeStr = strings.TrimSpace(sizeStr)
+
+	if strings.HasSuffix(sizeStr, "GB") {
+		return int(parseInt(sizeStr[:len(sizeStr)-2]) * 1024 * 1024 * 1024)
+	} else if strings.HasSuffix(sizeStr, "MB") {
+		return int(parseInt(sizeStr[:len(sizeStr)-2]) * 1024 * 1024)
+	} else if strings.HasSuffix(sizeStr, "KB") {
+		return int(parseInt(sizeStr[:len(sizeStr)-2]) * 1024)
+	} else if strings.HasSuffix(sizeStr, "B") {
+		return int(parseInt(sizeStr[:len(sizeStr)-1]))
+	}
+
+	return int(parseInt(sizeStr))
+}
+
+func parseInt(str string) float64 {
+	i, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		fmt.Println("Error parsing int:", err)
+		return 0
+	}
+	return i
 }
