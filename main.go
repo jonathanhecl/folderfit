@@ -77,7 +77,7 @@ func main() {
 	if verbose {
 		fmt.Printf("\nTotal target size: %s\n", formatSize(totalSize))
 		fmt.Println()
-		fmt.Println("Calculating selection...")
+		fmt.Println("Calculating selection... (", estimateTime(len(folderSizes), totalSize), " estimated time)")
 	}
 
 	selected := selectBestFolders(folderSizes, totalSize)
@@ -134,36 +134,140 @@ func calculateSize(source string) int {
 	return totalSize
 }
 
+func estimateTime(folderCount int, totalSizeBytes int) string {
+	// Ajustar la constante para reflejar el nuevo algoritmo más rápido
+	const k = 0.000001
+
+	estimatedMs := k * float64(folderCount) * float64(totalSizeBytes)
+
+	if estimatedMs < 1000 {
+		return fmt.Sprintf("%.2f ms", estimatedMs)
+	} else if estimatedMs < 60000 {
+		return fmt.Sprintf("%.2f s", estimatedMs/1000)
+	} else {
+		return fmt.Sprintf("%.2f m", estimatedMs/60000)
+	}
+}
+
 func selectBestFolders(folderSizes map[string]int, totalSize int) map[string]int {
+	totalSizeOfAllFiles := 0
+	for _, size := range folderSizes {
+		totalSizeOfAllFiles += size
+	}
+
+	if totalSizeOfAllFiles <= totalSize {
+		return folderSizes
+	}
+
+	scalingFactor := 1
+	scaledTotalSize := totalSize
+
+	if totalSize > 100000 {
+		if totalSize > 1000000000 {
+			scalingFactor = 1000000
+		} else if totalSize > 1000000 {
+			scalingFactor = 1000
+		} else {
+			scalingFactor = 100
+		}
+		scaledTotalSize = totalSize / scalingFactor
+	}
+
 	names := make([]string, 0, len(folderSizes))
 	sizes := make([]int, 0, len(folderSizes))
+	scaledSizes := make([]int, 0, len(folderSizes))
+
 	for name, size := range folderSizes {
 		names = append(names, name)
 		sizes = append(sizes, size)
+		scaledSize := size / scalingFactor
+		if scalingFactor > 1 && size > 0 && scaledSize == 0 {
+			scaledSize = 1
+		}
+		scaledSizes = append(scaledSizes, scaledSize)
 	}
 
 	n := len(names)
-	dp := make([][]int, n+1)
-	for i := range dp {
-		dp[i] = make([]int, totalSize+1)
+	dp := make([]int, scaledTotalSize+1)
+
+	keep := make([][]bool, n+1)
+	for i := range keep {
+		keep[i] = make([]bool, scaledTotalSize+1)
 	}
 
 	for i := 1; i <= n; i++ {
-		for j := 1; j <= totalSize; j++ {
-			if sizes[i-1] <= j {
-				dp[i][j] = max(dp[i-1][j], dp[i-1][j-sizes[i-1]]+sizes[i-1])
-			} else {
-				dp[i][j] = dp[i-1][j]
+		for j := scaledTotalSize; j >= 1; j-- {
+			if scaledSizes[i-1] <= j {
+				prev := dp[j]
+				taken := dp[j-scaledSizes[i-1]] + scaledSizes[i-1]
+
+				if taken > prev {
+					dp[j] = taken
+					keep[i][j] = true
+				}
 			}
 		}
 	}
 
 	selected := make(map[string]int)
-	j := totalSize
-	for i := n; i > 0 && dp[i][j] != 0; i-- {
-		if dp[i][j] != dp[i-1][j] {
+	j := scaledTotalSize
+
+	for i := n; i > 0 && j > 0; i-- {
+		if keep[i][j] {
 			selected[names[i-1]] = sizes[i-1]
-			j -= sizes[i-1]
+			j -= scaledSizes[i-1]
+		}
+	}
+
+	for {
+		total := calculateTotalSize(selected)
+		if total <= totalSize {
+			break
+		}
+
+		minValueRatio := float64(1 << 60)
+		var elementToRemove string
+		for name, size := range selected {
+			scaledSize := size / scalingFactor
+			if scaledSize == 0 {
+				scaledSize = 1
+			}
+
+			ratio := float64(size) / float64(scaledSize)
+			if ratio < minValueRatio {
+				minValueRatio = ratio
+				elementToRemove = name
+			}
+		}
+
+		if elementToRemove != "" {
+			delete(selected, elementToRemove)
+		} else {
+			selected = make(map[string]int)
+			break
+		}
+	}
+
+	for {
+		addMore := false
+		currentTotal := calculateTotalSize(selected)
+		remaining := totalSize - currentTotal
+
+		if remaining <= 0 {
+			break
+		}
+
+		for name, size := range folderSizes {
+			_, exists := selected[name]
+			if !exists && size <= remaining {
+				selected[name] = size
+				addMore = true
+				break
+			}
+		}
+
+		if !addMore {
+			break
 		}
 	}
 
