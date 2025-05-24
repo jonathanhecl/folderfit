@@ -17,15 +17,15 @@ I had originally created it in VB.NET 10 years ago, now it is multiplatform than
 ```
 
 - `<sources>`: A list of folders to be selected from. You can use `*` to include all files and folders in the current directory.
-- `<totalsize>`: The total storage capacity in bytes.
+- `<totalsize>`: The total storage capacity in bytes. You can use GB, MB, KB for easier input, note that you need to use quotes if you use comma.
 - `-verbose`: Optional flag to enable verbose output.
 
 ## Example
 
 ```sh
-> folderfit folder50kb file100kb -size=150000
+> folderfit folder50kb file100kb -size=15000
 
-FolderFit v 1.0.2
+FolderFit v 1.0.3
 file100kb - 97 KB
 folder50kb - 48 KB
 
