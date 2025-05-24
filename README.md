@@ -16,7 +16,7 @@ I had originally created it in VB.NET 10 years ago, now it is multiplatform than
 > folderfit <sources> -size=<totalsize> [-verbose]
 ```
 
-- `<sources>`: A list of folders to be selected from.
+- `<sources>`: A list of folders to be selected from. You can use `*` to include all files and folders in the current directory.
 - `<totalsize>`: The total storage capacity in bytes.
 - `-verbose`: Optional flag to enable verbose output.
 
@@ -25,7 +25,7 @@ I had originally created it in VB.NET 10 years ago, now it is multiplatform than
 ```sh
 > folderfit folder50kb file100kb -size=150000
 
-FolderFit v 1.0.1
+FolderFit v 1.0.2
 file100kb - 97 KB
 folder50kb - 48 KB
 
