@@ -72,7 +72,7 @@ func main() {
 	if verbose {
 		fmt.Printf("\nTotal target size: %s\n", formatSize(totalSize))
 		fmt.Println()
-		fmt.Println("Calculating selection... (", estimateTime(len(folderSizes), totalSize), " estimated time)")
+		fmt.Println("Calculating selection...")
 	}
 
 	selected := selectBestFolders(folderSizes, totalSize)
@@ -127,21 +127,6 @@ func calculateSize(source string) int {
 	}
 
 	return totalSize
-}
-
-func estimateTime(folderCount int, totalSizeBytes int) string {
-	// Ajustar la constante para reflejar el nuevo algoritmo más rápido
-	const k = 0.000001
-
-	estimatedMs := k * float64(folderCount) * float64(totalSizeBytes)
-
-	if estimatedMs < 1000 {
-		return fmt.Sprintf("%.2f ms", estimatedMs)
-	} else if estimatedMs < 60000 {
-		return fmt.Sprintf("%.2f s", estimatedMs/1000)
-	} else {
-		return fmt.Sprintf("%.2f m", estimatedMs/60000)
-	}
 }
 
 func selectBestFolders(folderSizes map[string]int, totalSize int) map[string]int {
