@@ -74,7 +74,7 @@ func main() {
 	if verbose {
 		fmt.Printf("\nTotal target size: %s\n", formatSize(totalSize))
 		fmt.Println()
-		fmt.Println("Calculating selection...\n")
+		fmt.Printf("\nCalculating selection...\n")
 	}
 
 	selected := selectBestFolders(folderSizes, totalSize)
