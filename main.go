@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var version = "1.0.3b"
+var version = "1.0.4"
 
 func printUsage() {
 	fmt.Println("Usage: folderfit <sources> -size=<totalsize> [-verbose]")
